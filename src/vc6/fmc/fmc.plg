@@ -1,0 +1,56 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: fmc - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP234.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/fmc.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\Work\C Projects\fmc-1.0.0\src\fmc.c"
+"D:\Work\C Projects\fmc-1.0.0\src\GenerateCCode.c"
+"D:\Work\C Projects\fmc-1.0.0\src\main.c"
+"D:\Work\C Projects\fmc-1.0.0\src\ReadFmcFile.c"
+"D:\Work\C Projects\fmc-1.0.0\src\util.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP234.tmp" 
+Creating temporary file "C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP235.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/fmc.pdb" /debug /machine:I386 /out:"Debug/fmc.exe" /pdbtype:sept 
+".\Debug\fmc.obj"
+".\Debug\GenerateCCode.obj"
+".\Debug\main.obj"
+".\Debug\ReadFmcFile.obj"
+".\Debug\util.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP235.tmp"
+<h3>Output Window</h3>
+Compiling...
+fmc.c
+GenerateCCode.c
+main.c
+ReadFmcFile.c
+util.c
+Linking...
+Creating temporary file "C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP237.bat" with contents
+[
+@echo off
+mkdir "%ProgramFiles%\fmc"
+mkdir "%ProgramFiles%\fmc\bin"
+copy Debug\fmc.exe "%ProgramFiles%\fmc\bin\" /Y
+]
+Creating command line "C:\DOCUME~1\calvin\LOCALS~1\Temp\RSP237.bat"
+
+子目录或文件 C:\Program Files\fmc 已经存在。
+子目录或文件 C:\Program Files\fmc\bin 已经存在。
+已复制         1 个文件。
+
+
+
+<h3>Results</h3>
+fmc.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

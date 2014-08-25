@@ -1,0 +1,11 @@
+MESSAGE	PersonalInfoList
+{
+	MESSAGE	PersonalInfo	ARRAY	37
+	{
+		INT	4	id
+		STRING	64	name
+		INT	1	age
+		STRING	1	gender		DEFAULT		"M"
+		INT	4	phone_num
+	}
+}

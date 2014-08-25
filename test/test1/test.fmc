@@ -1,0 +1,10 @@
+MESSAGE	TestMessage
+{
+	INT	1	version
+	STRING	32	name
+	INT	2	oper_number
+	INT	4	library_card_number
+	FLOAT	4	amount
+	FLOAT	8	balance
+	STRING	128	remark
+}

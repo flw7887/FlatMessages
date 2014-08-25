@@ -1,0 +1,333 @@
+FlatMessages - 快速二进制报文格式
+
+1.概述
+
+FlatMessages是一个跨平台的快速二进制报文格式，生成的报文占用内存小，无打包解包过程直接存取报文字段，普遍用于游戏、高性能应用服务器、内存受限的嵌入式和移动设备等场合。FlatMessages可以让你直接存取报文缓冲区内的所有字段，无需打包可立即发送给对端，对端无需解包即可直接存取报文缓冲区内的所有字段。
+
+FlatMessages目前仅支持C，将来还将支持C++、Java等语言。
+
+FlatMessages轻巧易用，不依赖于其他第三方库。
+
+FlatMessages使用命令行工具fmc用来生成C结构体及相关工具函数，将来还将支持C++、Java类。
+
+为什么使用FlatMessages？
+
+* 紧凑的二进制流：FlatMessages报文所有字段都分布在平坦的缓冲区中，一个字段紧靠下一个字段，布局非常紧凑，所以占用内存也非常小。命令行工具fmc根据报文定义，自动生成一个C结构体，通过指针直接存取缓冲区中的所有字段。
+* 高性能：由于通过自动生成的布满指针的C结构体直接存取报文缓冲区，避免了通讯发送前的打包和通讯接收后的解包，所以速度非常快，是某些极端追求性能的场景中的首选报文格式。
+* 灵活的报文定义语法：命令行工具fmc读入定义文件，生成特定语言的自动化代码，支持子报文嵌套、子报文数组、定义文件包含等灵活配置方式。
+* 跨平台：FlatMessages支持WINDOWS、Linux、AIX等主流操作系统，目前生成的自动化代码有C，将来还将支持C++、Java等主流语言。
+
+  报文缓冲区 ...| 4 bytes |   8 bytes   |64+1bytes|...
+                     A           A            A
+                     H           H            H
+  C结构体变量...|int*seqno|double*amount|char*name|...
+
+FlatMessages和其它报文格式的区别
+
+报文格式一般分为文本报文格式和二进制报文格式两大流派，文本报文格式如流行的XML、JSON，特点是易读可直接修改，缺点是占用空间大、打包解包耗时大，二进制报文格式如Google Protocol Buffer、FlatBuffers，优点为占用空间小，打包解包速度快，缺点为不可直接阅读和修改。其中FlatBuffers号称无需打包解包，但还是在处理特定布局上耗时不少，内存占用也相对较大，这也是笔者萌发了研发一套比FlatBuffers性能更快占用空间更小的报文格式FlatMessages，以及相关自动化工具fmc的初衷。
+如果你需要的是一种便于阅读，可直接修改的结构化标记语言，推荐用JSON；如果你有较强性能敏感（通讯传输、避免打包解包直接存取字段）和内存占用小等要求，推荐你试试FlatMessages，你会惊讶于它的简洁直接、性能优越、灵活易定义。
+
+2.编译安装
+
+for Linux
+$ tar xvzf fmc-1.0.0.tar.gz
+$ cd fmc-1.0.0
+$ su
+# make -f makefile.Linux install
+make[1]: Entering directory `/home/calvin/exsrc/fmc-1.0.0/src'
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c util.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c main.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c ReadFmcFile.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c GenerateCCode.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o fmc util.o main.o fmc.o ReadFmcFile.o GenerateCCode.o -L.
+cp -f fmc /usr/bin/
+make[1]: Leaving directory `/home/calvin/exsrc/fmc-1.0.0/src'
+make[1]: Entering directory `/home/calvin/exsrc/fmc-1.0.0/test'
+make[2]: Entering directory `/home/calvin/exsrc/fmc-1.0.0/test/test1'
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o test test.o test.fmc.o -L.
+mkdir -p /root/include
+cp -f test.fmc.h /root/include/
+make[2]: Leaving directory `/home/calvin/exsrc/fmc-1.0.0/test/test1'
+make[2]: Entering directory `/home/calvin/exsrc/fmc-1.0.0/test/test2'
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o test test.o test.fmc.o -L.
+cp -f test.fmc.h /root/include/
+make[2]: Leaving directory `/home/calvin/exsrc/fmc-1.0.0/test/test2'
+make[2]: Entering directory `/home/calvin/exsrc/fmc-1.0.0/test/test9'
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o test test.o test.fmc.o -L.
+cp -f test.fmc.h /root/include/
+make[2]: Leaving directory `/home/calvin/exsrc/fmc-1.0.0/test/test9'
+make[1]: Leaving directory `/home/calvin/exsrc/fmc-1.0.0/test'
+
+3.基本使用
+
+3.1.编写报文定义文件
+
+[code]
+$ cat test.fmc
+MESSAGE	TestMessage
+{
+	INT	1	version
+	STRING	32	name
+	INT	2	oper_number
+	INT	4	library_card_number
+	FLOAT	4	amount
+	FLOAT	8	balance
+	STRING	128	remark
+}
+[/code]
+
+3.2.用自动化代码工具fmc处理之
+
+[code]
+$ fmc -f test.fmc -c
+MESSAGE TestMessage
+       INT 1 version
+       STRING 32 name
+       INT 2 oper_number
+       INT 4 library_card_number
+       FLOAT 4 amount
+       FLOAT 8 balance
+       STRING 128 remark
+ok!
+$ ls
+test.fmc
+test.fmc.h
+test.fmc.c
+test.fmc.LOG.c
+[/code]
+
+test.fmc.h包含了一个C结构体定义，里面布满了报文所有字段的对应指针，test.fmc.c包含了指针绑定函数、解绑函数和初始化函数，test.fmc.LOG.c包含了一个函数用于快速打印报文所有字段到标准输出或文件或其它设备上便于调试。
+
+3.3.编写应用代码，一起编译成可执行文件，执行之
+
+[code]
+$ cat test.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "test.fmc.h"
+
+#include "test.fmc.LOG.c"
+
+int test()
+{
+	FMCCOM_TestMessage	com ;
+	FMCREF_TestMessage	ref ;
+	long			comlen ;
+	
+	/* init communication buffer */
+	memset( & com , 0x00 , sizeof(FMCCOM_TestMessage) );
+	
+	/* client code */
+	memset( & ref , 0x00 , sizeof(FMCREF_TestMessage) );
+	FMCBIND_TestMessage( & com , FMCLEN_TestMessage , & ref );
+	
+	*(ref.version) = 1 ;
+	strcpy( ref.name , "calvin" );
+	*(ref.oper_number) = 12345 ;
+	*(ref.library_card_number) = 1234567890 ;
+	*(ref.amount) = 100.00 ;
+	*(ref.balance) = 10000.00 ;
+	strcpy( ref.remark , "my remark" );
+	
+	comlen = FMCLEN_TestMessage ;
+	FMCUNBIND_TestMessage( & ref , & com , & comlen );
+	
+	/* ... client send communication buffer to server in '& com' with length 'comlen' ... */
+	
+	/* server code */
+	memset( & ref , 0x00 , sizeof(FMCREF_TestMessage) );
+	FMCBIND_TestMessage( & com , comlen , & ref );
+	
+	FMCLOG_TestMessage( & ref );
+	
+	return 0;
+}
+
+int main()
+{
+	return -test();
+}
+$ make
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o test test.o test.fmc.o -L.
+$ ./test
+TestMessage.version[1]
+TestMessage.name[calvin]
+TestMessage.oper_number[12345]
+TestMessage.library_card_number[1234567890]
+TestMessage.amount[100.000000]
+TestMessage.balance[10000.000000]
+TestMessage.remark[my remark]
+[/code]
+
+以上示例代码模拟了通讯客户端组织数据和通讯服务端使用数据，并利用了自动化生成的函数FMCLOG_TestMessage来打印所有字段到标准输出。
+
+4.FlatMessages报文定义文件语法
+
+.fmc文件支持子报文嵌套、子报文数组、定义文件包含等灵活配置方式，下面是一个综合的例子：
+[code]
+$ cat test.fmc
+MESSAGE	BankTransaction
+{
+	INT	1	version				DEFAULT		1
+	INCLUDE head.fmc
+	MESSAGE QueryTransactionDetails
+	{
+		MESSAGE AddonMessages ARRAY 3
+		{
+			STRING	64	message_text
+		}
+		MESSAGE TransactionDetailTitle
+		{
+			STRING	64	title_text	DEFAULT		"MY TITLE"
+			INT	2	page_no		DEFAULT		1
+			INT	2	page_size
+		}
+		MESSAGE TransactionDetails ARRAY 10
+		{
+			STRING	10	trans_date
+			STRING	10	trans_time
+			STRING	6	outlet_id	DEFAULT		"1001"
+			STRING	20	card_no
+			FLOAT	4	trans_amount
+		}
+	}
+}
+$ cat head.fmc
+	MESSAGE	ResponseHeader
+	{
+		STRING	32	transaction_code
+		INT	4	trans_jnlsno
+		INT	4	response_code		DEFAULT		0
+		STRING	1024	response_desc		DEFAULT		"OK"
+	}
+[/code]
+附加说明：DEFAULT后面的是字段缺省值，可以由自动化生成的函数FMCINIT_BankTransaction批量初始化。
+字段类型及长度目前支持有：
+INT 1,2,4
+FLOAT 4,8
+STRING N
+
+5.性能压测
+
+压测环境：
+CPU      : Intel(R) Core(TM) i3-3240 CPU 3.4GHz 3.4GHz
+内存     : 2GB
+操作系统 : WINDOWS XP SP3 ( VMWare 6.0.1 ( Red Hat Enterprise Linux Server release 5.4 ) )
+
+[code]
+$ cat test.fmc
+MESSAGE	PersonalInfoList
+{
+	MESSAGE	PersonalInfo	ARRAY	37
+	{
+		INT	4	id
+		STRING	64	name
+		INT	1	age
+		STRING	1	gender		DEFAULT		"M"
+		INT	4	phone_num
+	}
+}
+$ cat test.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "test.fmc.h"
+#include "test.fmc.LOG.c"
+
+int press( long press_count )
+{
+	FMCCOM_PersonalInfoList	com ;
+	FMCREF_PersonalInfoList	ref ;
+	long			comlen ;
+	long			c ;
+	long			t1 , t2 , dt ;
+	
+	time( & t1 );
+	
+	memset( & com , 0x00 , sizeof(FMCCOM_PersonalInfoList) );
+	comlen = sizeof(FMCCOM_PersonalInfoList) ;
+	memset( & ref , 0x00 , sizeof(FMCREF_PersonalInfoList) );
+	FMCBIND_PersonalInfoList( & com , comlen , & ref );
+	FMCINIT_PersonalInfoList( & com , & ref );
+	
+	*(ref.PersonalInfo[36].id) = 1001 ;
+	strcpy( ref.PersonalInfo[36].name , "Calvin" );
+	*(ref.PersonalInfo[36].age) = 35 ;
+	*(ref.PersonalInfo[36].phone_num) = 12345678 ;
+	
+	for( c = 0 ; c < press_count ; c++ )
+	{
+		FMCUNBIND_PersonalInfoList( & ref , & com , & comlen );
+		memset( & ref , 0x00 , sizeof(FMCREF_PersonalInfoList) );
+		FMCBIND_PersonalInfoList( & com , comlen , & ref );
+	}
+	
+	FUNCNAME_FMCLOG_PersonalInfoList( & ref );
+	
+	time( & t2 );
+	dt = t2 - t1 ;
+	
+	printf( "sizeof(FMCCOM_PersonalInfoList)[%d]\n" , sizeof(FMCCOM_PersonalInfoList) );
+	printf( "EPLASE %ld seconds\n" , dt );
+	
+	return 0;
+}
+
+static void usage()
+{
+	printf( "USAGE : test press_count\n" );
+}
+
+int main( int argc , char *argv[] )
+{
+	if( argc != 1 + 1 )
+	{
+		usage();
+		exit(7);
+	}
+	
+	return -press( atol(argv[1]) );
+}
+$ make
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -I.  -c test.fmc.c
+gcc -g -fPIC -O2 -Wall -Werror -fno-strict-aliasing -o test test.o test.fmc.o -L.
+$ time ./test 100000000
+...
+PersonalInfoList.PersonalInfo[index[1]].id[1001]
+PersonalInfoList.PersonalInfo[index[1]].name[Calvin]
+PersonalInfoList.PersonalInfo[index[1]].age[35]
+PersonalInfoList.PersonalInfo[index[1]].gender[M]
+PersonalInfoList.PersonalInfo[index[1]].phone_num[12345678]
+sizeof(FMCCOM_PersonalInfoList)[2812]
+EPLASE 7 seconds
+
+real    0m6.716s
+user    0m6.698s
+sys     0m0.013s
+[/code]
+
+填充测试结构的最后一个单元所有字段，然后解绑和绑定（可以理解成通讯发送前的打包和通讯接收后的解包）1亿次，最后打印报文到屏幕上，整个过程总耗时大约6.7秒。
+
+6.展望
+
+后续还有一些优化工作没有完成，还将添加支持通过函数直接存取结构字段和打包解包到完整大结构体两种使用方法，总有一种适合您的场景。
+
+欢迎使用，如果你碰到了使用问题或者有更酷的想法请告诉我，谢谢 ^_^
+
+是不是越看越心动了？那就赶紧下载来玩玩吧
+首页传送门 : [url]http://git.oschina.net/calvinwilliams/FlatMessages[/url]
+电子邮箱   : calvinwilliams.c@gmail.com
